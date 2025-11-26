@@ -1,15 +1,10 @@
+import { BaseApp } from '@zeppos/zml/base-app'
 
-import { getPackageInfo } from '@zos/app'
-
-App({
-  globalData: {
-  },
+App(BaseApp({
+  globalData: {},
   onCreate(options) {
-
-    const { appId } = getPackageInfo()
-    
+    console.log('App onCreate')
   },
-
   onDestroy(options) {
   }
-})
+}))

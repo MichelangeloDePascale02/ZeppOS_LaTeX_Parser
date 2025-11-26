@@ -1,70 +1,91 @@
-import { gettext } from 'i18n'
+// Funzioni di supporto per creare la struttura UI nativa (Dati puri, niente funzioni)
+const TextInput = (props) => ({ 
+  type: 'TEXT_INPUT', 
+  label: props.label, 
+  settingsKey: props.settingsKey 
+})
+
+const Toggle = (props) => ({ 
+  type: 'TOGGLE', 
+  label: props.label, 
+  settingsKey: props.settingsKey 
+})
+
+const Section = (props) => ({ 
+  type: 'SECTION', 
+  title: props.title, 
+  rows: props.children 
+})
+
+const TextRow = (props) => ({
+  type: 'TEXT_ROW',
+  label: props.label
+})
 
 AppSettingsPage({
-  state: {
-    title: '',
-    formula: '',
-    props: {},
-  },
+  build(props) {
+    const storage = props.settingsStorage
 
-  addFormula() {
-    if (!this.state.title || !this.state.formula) return
+    // ASCOLTATORE DEGLI EVENTI
+    // Poiché non possiamo usare onClick, ascoltiamo quando cambiano gli interruttori
+    storage.addListener('change', ({ key, newValue }) => {
+      
+      // --- LOGICA AGGIUNTA ---
+      // Se l'utente accende l'interruttore "cmd_add"
+      if (key === 'cmd_add' && newValue === true) {
+        const t = storage.getItem('temp_title')
+        const f = storage.getItem('temp_formula')
 
-    // Recupera i dati esistenti dalle impostazioni del telefono
-    const currentStr = this.state.props.settingsStorage.getItem('mathData')
-    let list = []
-    try {
-      list = currentStr ? JSON.parse(currentStr) : []
-    } catch(e) {}
+        if (t && f) {
+          // 1. Recupera lista attuale
+          let list = []
+          try { 
+            const existing = storage.getItem('mathData')
+            list = existing ? JSON.parse(existing) : []
+          } catch(e) {}
 
-    // Aggiungi
-    list.push({
-      title: this.state.title,
-      formulas: [this.state.formula]
+          // 2. Aggiungi
+          list.push({ title: t, formulas: [f] })
+
+          // 3. Salva (questo attiverà anche l'invio all'orologio via app-side)
+          storage.setItem('mathData', JSON.stringify(list))
+        }
+
+        // 4. Reset Interruttore (Feedback visivo: si spegne da solo)
+        storage.setItem('cmd_add', false)
+      }
+
+      // --- LOGICA RESET ---
+      // Se l'utente accende l'interruttore "cmd_clear"
+      if (key === 'cmd_clear' && newValue === true) {
+        storage.setItem('mathData', '[]')
+        storage.setItem('cmd_clear', false)
+      }
     })
 
-    // Salva e notifica
-    const jsonStr = JSON.stringify(list)
-    this.state.props.settingsStorage.setItem('mathData', jsonStr)
-    
-    // Pulisci i campi (simulato)
-    console.log("Formula aggiunta!")
-  },
-
-  clearData() {
-    this.state.props.settingsStorage.setItem('mathData', '[]')
-  },
-
-  build(props) {
-    this.state.props = props
-    
+    // COSTRUZIONE INTERFACCIA
     return Section({
       title: 'Gestione Formule',
       children: [
-        TextInput({
-          label: 'Titolo (es. Analisi)',
-          onChange: (val) => { this.state.title = val }
+        TextInput({ 
+          label: 'Titolo (es. Analisi)', 
+          settingsKey: 'temp_title' 
         }),
-        TextInput({
-          label: 'Formula LaTeX',
-          onChange: (val) => { this.state.formula = val }
+        TextInput({ 
+          label: 'Formula LaTeX', 
+          settingsKey: 'temp_formula' 
         }),
-        Button({
-          label: 'AGGIUNGI E INVIA',
-          onClick: () => {
-            this.addFormula()
-          }
+        // Usiamo TOGGLE come se fossero pulsanti
+        Toggle({ 
+          label: '👉 SALVA E INVIA (Attiva)', 
+          settingsKey: 'cmd_add' 
         }),
-        Button({
-          label: 'CANCELLA TUTTO',
-          color: 'danger',
-          onClick: () => {
-            this.clearData()
-          }
+        TextRow({ 
+          label: 'Attiva la levetta sopra per salvare.' 
         }),
-        Text({
-          paragraph: true,
-          text: 'Nota: Dopo aver cliccato "Aggiungi", le formule verranno inviate automaticamente all\'orologio.'
+        Toggle({ 
+          label: '🚨 CANCELLA TUTTO', 
+          settingsKey: 'cmd_clear' 
         })
       ]
     })
