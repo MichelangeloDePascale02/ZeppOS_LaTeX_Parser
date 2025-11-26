@@ -28,6 +28,12 @@
             "page/index",
             "page/detail"
           ]
+        },
+        "app-side": {
+          "path": "app-side/index"
+        },
+        "setting": {
+          "path": "setting/index"
         }
       },
       "usesPermission": [

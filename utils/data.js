@@ -1,7 +1,10 @@
-// utils/data.js
+import * as fs from '@zos/fs'
 
-// Modifica questo elenco per aggiungere/rimuovere formule
-export const MATH_DATA = [
+// Nome del file salvato nella memoria dell'orologio
+const DATA_FILE_NAME = 'user_math_data.json'
+
+// I tuoi dati di default (backup se non c'è nessun file)
+export const DEFAULT_MATH_DATA = [
   {
     title: "Analisi 1",
     formulas: [
@@ -26,3 +29,48 @@ export const MATH_DATA = [
     ]
   }
 ]
+
+// 1. Funzione per LEGGERE i dati (get)
+export function getMathData() {
+  try {
+    // Controlla se il file esiste
+    const stat = fs.statSync({ path: DATA_FILE_NAME })
+    
+    if (stat) {
+      // Leggi il file come testo
+      const content = fs.readFileSync({ 
+        path: DATA_FILE_NAME, 
+        options: { encoding: 'utf8' } 
+      })
+      // Trasforma il testo in oggetto JSON
+      if (content) {
+        return JSON.parse(content)
+      }
+    }
+  } catch (e) {
+    console.log("Nessun file trovato o errore lettura, uso default.")
+  }
+
+  // Se qualcosa va storto o è la prima volta, ritorna i dati base
+  return DEFAULT_MATH_DATA
+}
+
+// 2. Funzione per SALVARE i dati (set)
+export function saveMathData(newData) {
+  try {
+    // Trasforma l'oggetto JSON in stringa
+    const content = JSON.stringify(newData)
+    
+    // Scrivi sul disco
+    fs.writeFileSync({
+      path: DATA_FILE_NAME,
+      data: content,
+      options: { encoding: 'utf8' }
+    })
+    console.log("Salvataggio riuscito!")
+    return true
+  } catch (e) {
+    console.log("Errore durante il salvataggio:", e)
+    return false
+  }
+}
